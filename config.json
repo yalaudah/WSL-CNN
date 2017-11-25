@@ -1,0 +1,31 @@
+{
+  "pascal":
+  {
+    "data_path": "/home/yazeed/Documents/datasets/pascal/VOCdevkit/VOC2012"
+  },
+
+  "sbd":
+  {
+    "data_path": "/home/yazeed/Documents/datasets/pascal/benchmark_RELEASE"
+  },
+
+  "camvid":
+  {
+    "data_path": "/Users/meet/data/CamVid/"
+  },
+  
+  "ade20k":
+  {
+    "data_path": "/Users/meet/data/ADE20K_2016_07_26/"
+  },
+  
+  "mit_sceneparsing_benchmark":
+  {
+    "data_path": "/home/ubuntu/DATA/ADEChallengeData2016/"
+  },
+  
+  "cityscapes":
+  {
+    "data_path": "/home/yazeed/Documents/datasets/cityscapes"
+  }
+}
