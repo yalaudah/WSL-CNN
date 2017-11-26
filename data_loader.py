@@ -26,7 +26,7 @@ def get_train_valid_loader(data_dir,
                            random_seed,
                            valid_size=0.1,
                            shuffle=True,
-                           show_sample=True,
+                           show_sample=False,
                            num_workers=4,
                            pin_memory=False):
     """
@@ -65,11 +65,13 @@ def get_train_valid_loader(data_dir,
     # define transforms
     valid_transform = transforms.Compose([
             transforms.ToTensor(),
-            normalize
-        ])
+            normalize])
+    
+    
+
     if augment:
         train_transform = transforms.Compose([
-            transforms.RandomSizedCrop([99]),
+            transforms.RandomSizedCrop(70),
             transforms.RandomHorizontalFlip(),
             transforms.ToTensor(),
             normalize
@@ -118,7 +120,7 @@ def get_train_valid_loader(data_dir,
         data_iter = iter(sample_loader)
         images, labels = data_iter.next()
         X = images.numpy()
-        X = np.transpose(X, [0, 2, 1])
+        X = np.transpose(X, [0, 2, 3, 1]) # was this done correctly/
         plot_images(X, labels)
 
     return (train_loader, valid_loader)

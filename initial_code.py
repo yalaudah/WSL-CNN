@@ -6,22 +6,22 @@ Created on Sat Nov 25 12:40:50 2017
 @author: yazeed
 """
 
-# library
 # standard library
-import os
+#import os
 
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 
-# third-party library
-import torch
+# PyTorch:
+#import torch
 import torch.nn as nn
-from torch import np # Torch wrapper for Numpy
+#from torch import np # Torch wrapper for Numpy
 from torch.autograd import Variable
-import torch.utils.data as Data
+#import torch.utils.data as Data
 import torch.nn.functional as F
-import torchvision.models as models
-import torchvision.datasets as datasets
-import torchvision.transforms as transforms
+import torch.optim as optim
+#import torchvision.models as models
+#import torchvision.datasets as datasets
+#import torchvision.transforms as transforms
 
 from data_loader import get_train_valid_loader,get_test_loader
 
@@ -31,10 +31,12 @@ data_dir='/home/yazeed/Documents/datasets/seismic-2000/' # data path
 batch_size = 32
 n_threads = 1 # number of workers
 use_gpu = 0
-
+num_epochs = 100
 
 if use_gpu:
-    pin_memory =True
+    pin_memory = True
+else:
+    pin_memory = False
 
 
 #%% Setup Dataset and DataLoaders: 
@@ -45,7 +47,7 @@ train_loader, valid_loader = get_train_valid_loader(data_dir,
                            random_seed=1,
                            valid_size=0.1,
                            shuffle=True,
-                           show_sample=False,
+                           show_sample=True,
                            num_workers=n_threads,
                            pin_memory=pin_memory)
     
@@ -73,8 +75,8 @@ allows random shuffling, doing train/val splits, and data augmentation.
 class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
-        self.conv1 = nn.Conv2d(1, 32, kernel_size=3, padding=0,dilation=0) # TODO: try with dilation (i.e. atrous convolution)
-        self.conv2 = nn.Conv2d(32, 64, kernel_size=3, padding=0,dilation=0) # Try with padding
+        self.conv1 = nn.Conv2d(1, 32, kernel_size=3, padding=0,dilation=1) # TODO: try with dilation (i.e. atrous convolution)
+        self.conv2 = nn.Conv2d(32, 64, kernel_size=3, padding=0,dilation=1) # Try with padding
         self.conv2_drop = nn.Dropout2d()
         self.fc1 = nn.Linear(2048, 256)
         self.fc2 = nn.Linear(256, 4)
@@ -88,8 +90,36 @@ class Net(nn.Module):
         x = self.fc2(x)
         return F.sigmoid(x)
 
-model = Net() # On CPU
-# model = Net().cuda() # On GPU
+if use_gpu:
+    model = Net().cuda() # On GPU
+else:
+    model = Net() # On CPU    
+    
+#%% Defining the training function: 
+    
+optimizer = optim.SGD(model.parameters(), lr=0.01, momentum=0.5)
+
+def train(epoch):
+    model.train()
+    for batch_idx, (data, target) in enumerate(train_loader):
+        if use_gpu:
+            data, target = data.cuda(async=True), target.cuda(async=True) # On GPU
+        
+        data, target = Variable(data), Variable(target)
+        optimizer.zero_grad()
+        output = model(data)
+        loss = F.binary_cross_entropy(output, target)
+        loss.backward()
+        optimizer.step()
+        if batch_idx % 10 == 0:
+            print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
+                epoch, batch_idx * len(data), len(train_loader.dataset),
+                100. * batch_idx / len(train_loader), loss.data[0]))
+
+#%% Training: 
+    
+for epoch in range(1, num_epochs):
+    train(epoch)
 
 
-
+#%%
