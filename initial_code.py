@@ -12,7 +12,7 @@ Created on Sat Nov 25 12:40:50 2017
 #import matplotlib.pyplot as plt
 
 # PyTorch:
-#import torch
+import torch
 import torch.nn as nn
 #from torch import np # Torch wrapper for Numpy
 from torch.autograd import Variable
@@ -75,19 +75,28 @@ allows random shuffling, doing train/val splits, and data augmentation.
 class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
-        self.conv1 = nn.Conv2d(1, 32, kernel_size=3, padding=0,dilation=1) # TODO: try with dilation (i.e. atrous convolution)
+        # TODO: chnage the 3 below to 1 once that is fixed in the data.
+        self.conv1 = nn.Conv2d(3, 32, kernel_size=3, padding=0,dilation=1) # TODO: try with dilation (i.e. atrous convolution)
         self.conv2 = nn.Conv2d(32, 64, kernel_size=3, padding=0,dilation=1) # Try with padding
-        self.conv2_drop = nn.Dropout2d()
-        self.fc1 = nn.Linear(2048, 256)
-        self.fc2 = nn.Linear(256, 4)
+        self.conv3 = nn.Conv2d(64, 128, kernel_size=3, padding=0,dilation=1) # Try with padding
+        self.conv3_drop = nn.Dropout2d()
+        self.fc1 = nn.Linear(12800, 32)
+        self.fc2 = nn.Linear(32, 4)
 
     def forward(self, x):
         x = F.relu(F.max_pool2d(self.conv1(x), 2))
-        x = F.relu(F.max_pool2d(self.conv2_drop(self.conv2(x)), 2))
+#        print(x.size())
+        x = F.relu(F.max_pool2d(self.conv2(x), 2))
+#        print(x.size())
+        x = F.relu(F.max_pool2d(self.conv3_drop(self.conv3(x)), 2))
+#        print(x.size())
         x = x.view(x.size(0), -1) # Flatten layer
+#        print(x.size())
         x = F.relu(self.fc1(x))
+#        print(x.size())
         x = F.dropout(x, training=self.training)
         x = self.fc2(x)
+#        print(x.size())
         return F.sigmoid(x)
 
 if use_gpu:
@@ -100,15 +109,27 @@ else:
 optimizer = optim.SGD(model.parameters(), lr=0.01, momentum=0.5)
 
 def train(epoch):
+    # this only needs to be created once -- then reused:
+    target_onehot = torch.LongTensor(train_loader.batch_size,len(train_loader.dataset.classes)).zero_() 
     model.train()
     for batch_idx, (data, target) in enumerate(train_loader):
         if use_gpu:
             data, target = data.cuda(async=True), target.cuda(async=True) # On GPU
         
         data, target = Variable(data), Variable(target)
+        
+        # Convert target to one-hot format: --------
+        index = torch.unsqueeze(target.data,1)
+        target_onehot.zero_()
+        target_onehot.scatter_(1,index,1)
+        # FOR SOME REASON BINARY CROSS ENTROPY WANTS TARGET AS FLOAT: 
+        # ------------------------------------------
+        
         optimizer.zero_grad()
         output = model(data)
-        loss = F.binary_cross_entropy(output, target)
+        
+        loss = F.binary_cross_entropy(output, Variable(target_onehot.type(torch.FloatTensor)))
+        
         loss.backward()
         optimizer.step()
         if batch_idx % 10 == 0:

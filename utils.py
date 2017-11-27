@@ -3,8 +3,8 @@ import matplotlib.pyplot as plt
 
 label_names = [
         'chaotic',
-        'other',
         'fault',
+        'other',
         'salt']
 
 #label_names = [
@@ -29,7 +29,7 @@ def plot_images(images, cls_true, cls_pred=None):
 
     for i, ax in enumerate(axes.flat):
         # plot the image
-        ax.imshow(images[i, :, :, :], interpolation='spline16')
+        ax.imshow(images[i, :, :, :], interpolation='spline16', cmap='gray')
         # get its equivalent class name
         cls_true_name = label_names[cls_true[i]]
             

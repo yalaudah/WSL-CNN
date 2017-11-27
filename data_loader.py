@@ -70,8 +70,10 @@ def get_train_valid_loader(data_dir,
     
 
     if augment:
+        # transforms.RandomSizedCrop(70), <-- eventually i will need to 
+        # get results for 99x99 images.. better to leave them as they are, and not crop (for now)
+
         train_transform = transforms.Compose([
-            transforms.RandomSizedCrop(70),
             transforms.RandomHorizontalFlip(),
             transforms.ToTensor(),
             normalize
