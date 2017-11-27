@@ -23,6 +23,10 @@ import torch.optim as optim
 #import torchvision.datasets as datasets
 #import torchvision.transforms as transforms
 
+# Logging:
+from tensorboard import SummaryWriter
+
+# Other: 
 from data_loader import get_train_valid_loader,get_test_loader
 
 #%% Arguments (later) and parameters (for now)
@@ -38,6 +42,7 @@ if use_gpu:
 else:
     pin_memory = False
 
+writer = SummaryWriter()
 
 #%% Setup Dataset and DataLoaders: 
 
@@ -108,6 +113,9 @@ else:
     
 optimizer = optim.SGD(model.parameters(), lr=0.01, momentum=0.5)
 
+global idx 
+idx = 0
+
 def train(epoch):
     # this only needs to be created once -- then reused:
     target_onehot = torch.LongTensor(train_loader.batch_size,len(train_loader.dataset.classes)).zero_() 
@@ -129,6 +137,12 @@ def train(epoch):
         output = model(data)
         
         loss = F.binary_cross_entropy(output, Variable(target_onehot.type(torch.FloatTensor)))
+        
+        # ---------------------
+        global idx 
+        idx = idx + 1
+        writer.add_scalar('loss', loss.data[0], idx) 
+        # ---------------------
         
         loss.backward()
         optimizer.step()
