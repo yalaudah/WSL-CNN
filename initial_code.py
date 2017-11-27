@@ -141,7 +141,7 @@ def train(epoch):
         # ---------------------
         global idx 
         idx = idx + 1
-        writer.add_scalar('loss', loss.data[0], idx) 
+        writer.add_scalar('training loss', loss.data[0], idx) 
         # ---------------------
         
         loss.backward()
@@ -151,10 +151,44 @@ def train(epoch):
                 epoch, batch_idx * len(data), len(train_loader.dataset),
                 100. * batch_idx / len(train_loader), loss.data[0]))
 
+#%%
+
+def validate(epoch):
+    # this only needs to be created once -- then reused:
+    val_target_onehot = torch.LongTensor(valid_loader.batch_size,len(valid_loader.dataset.classes)).zero_() 
+    for val_batch_idx, (val_data, val_target) in enumerate(valid_loader):
+        if use_gpu:
+            val_data, val_target = val_data.cuda(async=True), val_target.cuda(async=True) # On GPU
+        
+        val_data, val_target = Variable(val_data), Variable(val_target)
+        
+        # Convert target to one-hot format: --------
+        v_index = torch.unsqueeze(val_target.data,1)
+        val_target_onehot.zero_()
+        val_target_onehot.scatter_(1,v_index,1)
+        # FOR SOME REASON BINARY CROSS ENTROPY WANTS TARGET AS FLOAT: 
+        # ------------------------------------------
+        
+        output = model(val_data)
+        
+        loss = F.binary_cross_entropy(output, Variable(val_target_onehot.type(torch.FloatTensor)))
+        
+        # ---------------------
+        global idx 
+        writer.add_scalar('validation loss', loss.data[0], idx) 
+        # ---------------------
+        
+        if val_batch_idx % 10 == 0:
+            print('Valid Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
+                epoch, val_batch_idx * len(val_data), len(valid_loader.dataset),
+                100. * val_batch_idx / len(valid_loader), loss.data[0]))
+
+
 #%% Training: 
     
 for epoch in range(1, num_epochs):
     train(epoch)
+    validate(epoch)
 
 
 #%%
