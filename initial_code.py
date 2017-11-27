@@ -32,7 +32,7 @@ from data_loader import get_train_valid_loader,get_test_loader
 #%% Arguments (later) and parameters (for now)
 
 data_dir='/home/yazeed/Documents/datasets/seismic-2000/' # data path
-batch_size = 32
+batch_size = 20
 n_threads = 1 # number of workers
 use_gpu = 0
 num_epochs = 100
