@@ -34,7 +34,7 @@ from data_loader import get_train_valid_loader,get_test_loader
 data_dir='/home/yazeed/Documents/datasets/seismic-2000/' # data path
 batch_size = 20
 n_threads = 1 # number of workers
-use_gpu = 0
+use_gpu = 1
 num_epochs = 100
 
 if use_gpu:
@@ -52,7 +52,7 @@ train_loader, valid_loader = get_train_valid_loader(data_dir,
                            random_seed=1,
                            valid_size=0.1,
                            shuffle=True,
-                           show_sample=True,
+                           show_sample=False,
                            num_workers=n_threads,
                            pin_memory=pin_memory)
     
@@ -118,7 +118,10 @@ idx = 0
 
 def train(epoch):
     # this only needs to be created once -- then reused:
-    target_onehot = torch.LongTensor(train_loader.batch_size,len(train_loader.dataset.classes)).zero_() 
+    target_onehot = torch.FloatTensor(train_loader.batch_size,len(train_loader.dataset.classes)).zero_() 
+    if use_gpu:
+        target_onehot = target_onehot.cuda()
+        
     model.train()
     for batch_idx, (data, target) in enumerate(train_loader):
         if use_gpu:
@@ -136,7 +139,7 @@ def train(epoch):
         optimizer.zero_grad()
         output = model(data)
         
-        loss = F.binary_cross_entropy(output, Variable(target_onehot.type(torch.FloatTensor)))
+        loss = F.binary_cross_entropy(output, Variable(target_onehot))
         
         # ---------------------
         global idx 
@@ -155,33 +158,37 @@ def train(epoch):
 
 def validate(epoch):
     # this only needs to be created once -- then reused:
-    val_target_onehot = torch.LongTensor(valid_loader.batch_size,len(valid_loader.dataset.classes)).zero_() 
-    for val_batch_idx, (val_data, val_target) in enumerate(valid_loader):
+    target_onehot = torch.FloatTensor(valid_loader.batch_size,len(valid_loader.dataset.classes)).zero_() 
+    
+    if use_gpu:
+        target_onehot = target_onehot.cuda()
+    
+    for batch_idx, (data, target) in enumerate(valid_loader):
         if use_gpu:
-            val_data, val_target = val_data.cuda(async=True), val_target.cuda(async=True) # On GPU
+            data, target = data.cuda(async=True), target.cuda(async=True) # On GPU
         
-        val_data, val_target = Variable(val_data), Variable(val_target)
+        data, target = Variable(data), Variable(target)
         
         # Convert target to one-hot format: --------
-        v_index = torch.unsqueeze(val_target.data,1)
-        val_target_onehot.zero_()
-        val_target_onehot.scatter_(1,v_index,1)
+        index = torch.unsqueeze(target.data,1)
+        target_onehot.zero_()
+        target_onehot.scatter_(1,index,1)
         # FOR SOME REASON BINARY CROSS ENTROPY WANTS TARGET AS FLOAT: 
         # ------------------------------------------
         
-        output = model(val_data)
+        output = model(data)
         
-        loss = F.binary_cross_entropy(output, Variable(val_target_onehot.type(torch.FloatTensor)))
+        loss = F.binary_cross_entropy(output, Variable(target_onehot))
         
         # ---------------------
         global idx 
         writer.add_scalar('validation loss', loss.data[0], idx) 
         # ---------------------
         
-        if val_batch_idx % 10 == 0:
+        if batch_idx % 10 == 0:
             print('Valid Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
-                epoch, val_batch_idx * len(val_data), len(valid_loader.dataset),
-                100. * val_batch_idx / len(valid_loader), loss.data[0]))
+                epoch, batch_idx * len(data), len(valid_loader.dataset),
+                100. * batch_idx / len(valid_loader), loss.data[0]))
 
 
 #%% Training: 
