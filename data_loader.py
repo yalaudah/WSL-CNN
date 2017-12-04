@@ -113,7 +113,6 @@ def get_train_valid_loader(data_dir,
 
     # visualize some images
     if show_sample:
-        # TODO: FIX THIS LATER.. IT DOESN'T WORK. 
         sample_loader = torch.utils.data.DataLoader(train_dataset, 
                                                     batch_size=9, 
                                                     shuffle=shuffle, 
@@ -148,19 +147,26 @@ def get_test_loader(data_dir,
     -------
     - data_loader: test set iterator.
     """
+    
+    #
+    # NOTE: THIS IS CURRENTLY USED FOR THE LANDMASS-2 DATASET. CHANGE LATE IF NECCESARY.
+    #
+    
     # seismic-2000:
     normalize = transforms.Normalize(mean=[0.4967, 0.4967],
                                      std=[0.1569 ,0.1569])
 
     # define transform
-    transform = transforms.Compose([
+    test_transform = transforms.Compose([
+        transforms.RandomCrop(99),
+        transforms.RandomHorizontalFlip,
         transforms.ToTensor(),
         normalize
     ])
 
-    dataset = datasets.ImageFolder(root=data_dir, transform=transform)
+    landmass2_dataset = datasets.ImageFolder(root=data_dir, transform=test_transform)
 
-    data_loader = torch.utils.data.DataLoader(dataset, 
+    data_loader = torch.utils.data.DataLoader(landmass2_dataset, 
                                               batch_size=batch_size, 
                                               shuffle=shuffle, 
                                               num_workers=num_workers,
