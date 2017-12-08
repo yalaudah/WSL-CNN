@@ -34,7 +34,7 @@ from tensorboardX import SummaryWriter
 from data_loader import get_train_valid_loader,get_test_loader
 from helpers import models
 
-#%% Arguments (later) and parameters (for now)
+## %% Arguments (later) and parameters (for now)
 
 data_dir='/home/yazeed/Documents/datasets/seismic-2000/' # data path
 batch_size = 20
@@ -51,6 +51,8 @@ else:
 
 writer = SummaryWriter()
 
+
+## ########################################################################################################
 #%% Setup Dataset and DataLoaders: 
 
 train_loader, valid_loader = get_train_valid_loader(data_dir,
@@ -66,6 +68,9 @@ train_loader, valid_loader = get_train_valid_loader(data_dir,
 
 #the get_train_valid_loader above is a high level wrapper for the code below. It 
 #allows random shuffling, doing train/val splits, and data augmentation.
+
+
+## ########################################################################################################
 
 #%% Setup Model
 #
@@ -85,7 +90,8 @@ else:
     model = Net() # On CPU    
     
 #%% Defining the training function: 
-    
+## ########################################################################################################
+
 optimizer = optim.SGD(model.parameters(), lr=0.01, momentum=0.5) # TODO: optimize these values
 
 global idx 
@@ -128,6 +134,7 @@ def train(epoch):
                 100. * batch_idx / len(train_loader), loss.data[0]))
 
 #%%
+## ########################################################################################################
 
 def validate(epoch):
     # this only needs to be created once -- then reused:
@@ -165,7 +172,9 @@ def validate(epoch):
 
 
 #%% Training: 
-    
+## ########################################################################################################
+
+
 for epoch in range(1, num_epochs):
     train(epoch)
     validate(epoch)
