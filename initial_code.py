@@ -39,12 +39,14 @@ from helpers import models
 data_dir='/home/yazeed/Documents/datasets/seismic-2000/' # data path
 batch_size = 20
 n_threads = 1 # number of workers
-use_gpu = 0
+
 num_epochs = 100
 
-if use_gpu:
+if torch.cuda.is_available():
+    use_gpu = 1
     pin_memory = True
 else:
+    use_gpu = 0
     pin_memory = False
 
 writer = SummaryWriter()
